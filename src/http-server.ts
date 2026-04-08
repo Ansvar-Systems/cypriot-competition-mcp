@@ -47,23 +47,36 @@ try {
   // fallback
 }
 
+// --- Shared _meta block -------------------------------------------------------
+
+function buildMeta() {
+  return {
+    disclaimer:
+      "This data is sourced from official CPC-CY publications and is provided for research purposes only. Verify all references against primary sources before making compliance decisions.",
+    data_age: "Database updated periodically; may lag official publications.",
+    copyright:
+      "Data sourced from Commission for the Protection of Competition (CPC-CY). Original publications © Republic of Cyprus.",
+    source_url: "https://www.competition.gov.cy/",
+  };
+}
+
 // --- Tool definitions (shared with index.ts) ---------------------------------
 
 const TOOLS = [
   {
     name: "cy_comp_search_decisions",
     description:
-      "Full-text search across Bundeskartellamt enforcement decisions (abuse of dominance, cartel, sector inquiries). Returns matching decisions with case number, parties, outcome, fine amount, and GWB articles cited.",
+      "Full-text search across CPC-CY (Commission for the Protection of Competition — Cyprus) enforcement decisions covering abuse of dominance, cartel enforcement, and sector inquiries under Cypriot competition law (Law 13(I)/2022). Returns matching decisions with case number, parties, outcome, fine amount, and legal articles cited.",
     inputSchema: {
       type: "object" as const,
       properties: {
-        query: { type: "string", description: "Search query (e.g., 'Marktmissbrauch', 'Facebook', 'Preisabsprache')" },
+        query: { type: "string", description: "Search query (e.g., 'abuse of dominance', 'price fixing', 'market concentration')" },
         type: {
           type: "string",
           enum: ["abuse_of_dominance", "cartel", "merger", "sector_inquiry"],
           description: "Filter by decision type. Optional.",
         },
-        sector: { type: "string", description: "Filter by sector ID. Optional." },
+        sector: { type: "string", description: "Filter by sector ID (e.g., 'banking', 'telecommunications', 'energy'). Optional." },
         outcome: {
           type: "string",
           enum: ["prohibited", "cleared", "cleared_with_conditions", "fine"],
@@ -77,11 +90,11 @@ const TOOLS = [
   {
     name: "cy_comp_get_decision",
     description:
-      "Get a specific Bundeskartellamt decision by case number (e.g., 'B6-22/16').",
+      "Get a specific CPC-CY decision by case number (e.g., '27/2023', '18/2022').",
     inputSchema: {
       type: "object" as const,
       properties: {
-        case_number: { type: "string", description: "Case number (e.g., 'B6-22/16', 'B2-94/12')" },
+        case_number: { type: "string", description: "CPC-CY case number (e.g., '27/2023', '18/2022')" },
       },
       required: ["case_number"],
     },
@@ -89,11 +102,11 @@ const TOOLS = [
   {
     name: "cy_comp_search_mergers",
     description:
-      "Search Bundeskartellamt merger control decisions (Fusionskontrolle).",
+      "Search CPC-CY merger control decisions. Returns merger cases with acquiring party, target, sector, and outcome.",
     inputSchema: {
       type: "object" as const,
       properties: {
-        query: { type: "string", description: "Search query (e.g., 'Vonovia', 'Energieversorgung')" },
+        query: { type: "string", description: "Search query (e.g., 'banking sector merger', 'telecom acquisition', 'retail concentration')" },
         sector: { type: "string", description: "Filter by sector ID. Optional." },
         outcome: {
           type: "string",
@@ -108,11 +121,11 @@ const TOOLS = [
   {
     name: "cy_comp_get_merger",
     description:
-      "Get a specific merger control decision by case number (e.g., 'B1-35/21').",
+      "Get a specific CPC-CY merger control decision by case number (e.g., 'M-12/2023').",
     inputSchema: {
       type: "object" as const,
       properties: {
-        case_number: { type: "string", description: "Merger case number (e.g., 'B1-35/21')" },
+        case_number: { type: "string", description: "CPC-CY merger case number (e.g., 'M-12/2023')" },
       },
       required: ["case_number"],
     },
@@ -120,13 +133,25 @@ const TOOLS = [
   {
     name: "cy_comp_list_sectors",
     description:
-      "List all sectors with Bundeskartellamt enforcement activity, including decision and merger counts.",
+      "List all sectors with CPC-CY enforcement activity, including decision counts and merger counts per sector.",
     inputSchema: { type: "object" as const, properties: {}, required: [] },
   },
   {
     name: "cy_comp_about",
     description:
       "Return metadata about this MCP server: version, data source, coverage, and tool list.",
+    inputSchema: { type: "object" as const, properties: {}, required: [] },
+  },
+  {
+    name: "cy_comp_list_sources",
+    description:
+      "List all data sources used by this server with provenance metadata: name, URL, last ingestion date, scope, and limitations.",
+    inputSchema: { type: "object" as const, properties: {}, required: [] },
+  },
+  {
+    name: "cy_comp_check_data_freshness",
+    description:
+      "Check data freshness for each source. Reports staleness and when data was last updated.",
     inputSchema: { type: "object" as const, properties: {}, required: [] },
   },
 ];
@@ -195,7 +220,7 @@ function createMcpServer(): Server {
             outcome: parsed.outcome,
             limit: parsed.limit,
           });
-          return textContent({ results, count: results.length });
+          return textContent({ results, count: results.length, _meta: buildMeta() });
         }
 
         case "cy_comp_get_decision": {
@@ -204,7 +229,7 @@ function createMcpServer(): Server {
           if (!decision) {
             return errorContent(`Decision not found: ${parsed.case_number}`);
           }
-          return textContent(decision);
+          return textContent({ ...decision, _meta: buildMeta() });
         }
 
         case "cy_comp_search_mergers": {
@@ -215,7 +240,7 @@ function createMcpServer(): Server {
             outcome: parsed.outcome,
             limit: parsed.limit,
           });
-          return textContent({ results, count: results.length });
+          return textContent({ results, count: results.length, _meta: buildMeta() });
         }
 
         case "cy_comp_get_merger": {
@@ -224,12 +249,12 @@ function createMcpServer(): Server {
           if (!merger) {
             return errorContent(`Merger case not found: ${parsed.case_number}`);
           }
-          return textContent(merger);
+          return textContent({ ...merger, _meta: buildMeta() });
         }
 
         case "cy_comp_list_sectors": {
           const sectors = listSectors();
-          return textContent({ sectors, count: sectors.length });
+          return textContent({ sectors, count: sectors.length, _meta: buildMeta() });
         }
 
         case "cy_comp_about": {
@@ -237,9 +262,47 @@ function createMcpServer(): Server {
             name: SERVER_NAME,
             version: pkgVersion,
             description:
-              "Bundeskartellamt (German Federal Cartel Office) MCP server. Provides access to German competition law enforcement decisions, merger control cases, and sector enforcement data under the GWB (Gesetz gegen Wettbewerbsbeschränkungen).",
-            data_source: "Bundeskartellamt (https://www.bundeskartellamt.de/)",
+              "CPC-CY (Commission for the Protection of Competition — Cyprus) MCP server. Provides access to Cypriot competition law enforcement decisions, merger control cases, and sector enforcement data under Law 13(I)/2022.",
+            data_source: "CPC-CY (https://www.competition.gov.cy/)",
+            coverage: {
+              decisions: "Abuse of dominance, cartel enforcement, and sector inquiries under Cypriot competition law",
+              mergers: "Merger control decisions — Phase I and Phase II",
+              sectors: "Banking, telecommunications, energy, retail, tourism, construction, media",
+            },
             tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
+            _meta: buildMeta(),
+          });
+        }
+
+        case "cy_comp_list_sources": {
+          return textContent({
+            sources: [
+              {
+                name: "Commission for the Protection of Competition (CPC-CY)",
+                url: "https://www.competition.gov.cy/",
+                scope: "Enforcement decisions (abuse of dominance, cartels, sector inquiries) and merger control cases under Cypriot competition law (Law 13(I)/2022)",
+                jurisdiction: "Cyprus (CY)",
+                language: "Greek / English",
+                license: "Public domain — official government publications",
+                limitations: "Coverage may be incomplete; decisions predating digital publication may be missing",
+              },
+            ],
+            _meta: buildMeta(),
+          });
+        }
+
+        case "cy_comp_check_data_freshness": {
+          return textContent({
+            sources: [
+              {
+                name: "CPC-CY decisions",
+                status: "periodic",
+                note: "Database is updated periodically via the ingest-cpcc crawler. Check last_ingested field in coverage.json for exact timestamp.",
+                staleness_warning: "Data may lag official CPC-CY publications by days to weeks.",
+              },
+            ],
+            recommendation: "Run `npm run ingest` to refresh data from CPC-CY official website.",
+            _meta: buildMeta(),
           });
         }
 
