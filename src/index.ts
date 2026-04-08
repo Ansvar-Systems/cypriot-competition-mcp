@@ -43,6 +43,19 @@ try {
 
 const SERVER_NAME = "cypriot-competition-mcp";
 
+// --- Shared _meta block -------------------------------------------------------
+
+function buildMeta() {
+  return {
+    disclaimer:
+      "This data is sourced from official CPC-CY publications and is provided for research purposes only. Verify all references against primary sources before making compliance decisions.",
+    data_age: "Database updated periodically; may lag official publications.",
+    copyright:
+      "Data sourced from Commission for the Protection of Competition (CPC-CY). Original publications © Republic of Cyprus.",
+    source_url: "https://www.competition.gov.cy/",
+  };
+}
+
 // --- Tool definitions ---------------------------------------------------------
 
 const TOOLS = [
@@ -157,6 +170,26 @@ const TOOLS = [
       required: [],
     },
   },
+  {
+    name: "cy_comp_list_sources",
+    description:
+      "List all data sources used by this server with provenance metadata: name, URL, last ingestion date, scope, and limitations.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "cy_comp_check_data_freshness",
+    description:
+      "Check data freshness for each source. Reports staleness and when data was last updated.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
 ];
 
 // --- Zod schemas for argument validation --------------------------------------
@@ -226,7 +259,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           outcome: parsed.outcome,
           limit: parsed.limit,
         });
-        return textContent({ results, count: results.length });
+        return textContent({ results, count: results.length, _meta: buildMeta() });
       }
 
       case "cy_comp_get_decision": {
@@ -235,7 +268,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!decision) {
           return errorContent(`Decision not found: ${parsed.case_number}`);
         }
-        return textContent(decision);
+        return textContent({ ...decision, _meta: buildMeta() });
       }
 
       case "cy_comp_search_mergers": {
@@ -246,7 +279,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           outcome: parsed.outcome,
           limit: parsed.limit,
         });
-        return textContent({ results, count: results.length });
+        return textContent({ results, count: results.length, _meta: buildMeta() });
       }
 
       case "cy_comp_get_merger": {
@@ -255,12 +288,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!merger) {
           return errorContent(`Merger case not found: ${parsed.case_number}`);
         }
-        return textContent(merger);
+        return textContent({ ...merger, _meta: buildMeta() });
       }
 
       case "cy_comp_list_sectors": {
         const sectors = listSectors();
-        return textContent({ sectors, count: sectors.length });
+        return textContent({ sectors, count: sectors.length, _meta: buildMeta() });
       }
 
       case "cy_comp_about": {
@@ -276,6 +309,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             sectors: "Banking, telecommunications, energy, retail, tourism, construction, media",
           },
           tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
+          _meta: buildMeta(),
+        });
+      }
+
+      case "cy_comp_list_sources": {
+        return textContent({
+          sources: [
+            {
+              name: "Commission for the Protection of Competition (CPC-CY)",
+              url: "https://www.competition.gov.cy/",
+              scope: "Enforcement decisions (abuse of dominance, cartels, sector inquiries) and merger control cases under Cypriot competition law (Law 13(I)/2022)",
+              jurisdiction: "Cyprus (CY)",
+              language: "Greek / English",
+              license: "Public domain — official government publications",
+              limitations: "Coverage may be incomplete; decisions predating digital publication may be missing",
+            },
+          ],
+          _meta: buildMeta(),
+        });
+      }
+
+      case "cy_comp_check_data_freshness": {
+        return textContent({
+          sources: [
+            {
+              name: "CPC-CY decisions",
+              status: "periodic",
+              note: "Database is updated periodically via the ingest-cpcc crawler. Check last_ingested field in coverage.json for exact timestamp.",
+              staleness_warning: "Data may lag official CPC-CY publications by days to weeks.",
+            },
+          ],
+          recommendation: "Run `npm run ingest` to refresh data from CPC-CY official website.",
+          _meta: buildMeta(),
         });
       }
 

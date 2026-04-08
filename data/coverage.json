@@ -1,0 +1,12 @@
+{
+  "authority": "Commission for the Protection of Competition (CPC-CY)",
+  "jurisdiction": "CY",
+  "source_url": "https://www.competition.gov.cy/",
+  "last_ingested": null,
+  "decision_count": 0,
+  "merger_count": 0,
+  "sector_count": 0,
+  "coverage_start": null,
+  "coverage_end": null,
+  "notes": "Populated by npm run ingest. last_ingested is set to ISO-8601 timestamp on each successful ingest run."
+}
