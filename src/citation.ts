@@ -21,6 +21,9 @@ export interface CitationMetadata {
     tool: string;
     args: Record<string, string>;
   };
+  publisher?: string;
+  license?: string;
+  retrieved_at?: string;
 }
 
 /**
@@ -47,11 +50,14 @@ export function buildCitation(
     canonical_ref: canonicalRef,
     display_text: displayText,
     ...(aliases && aliases.length > 0 && { aliases }),
-    ...(sourceUrl && { source_url: sourceUrl }),
+    source_url: sourceUrl || SOURCE_ATTRIBUTION.base_url,
     lookup: {
       tool: toolName,
       args: toolArgs,
     },
+    publisher: SOURCE_ATTRIBUTION.publisher,
+    license: SOURCE_ATTRIBUTION.license,
+    retrieved_at: new Date().toISOString(),
   };
 }
 
@@ -149,5 +155,43 @@ export function buildRegulationCitation(
     ...(aliases.length > 0 && { aliases }),
     ...(sourceUrl && { source_url: sourceUrl }),
     lookup: { tool: toolName, args: toolArgs },
+  };
+}
+
+/**
+ * Source attribution constant. Auto-injected by scripts/apply-mcp-standard.py
+ * from the fleet manifest's attribution.publisher and attribution.license.
+ * Per the Source Attribution Standard, every served item MUST carry these
+ * fields so the gateway can verify upstream source rights at fan-out time.
+ *
+ * Override values manually here if the MCP serves multi-source content
+ * (see docs/runbooks/source-licensing-audit-methodology.md for the multi-
+ * source pattern), or if the publisher differs from the manifest declaration
+ * (e.g. seed-only MCPs should declare publisher=ansvar-systems +
+ * license=Ansvar-Synthesis honestly).
+ */
+export const SOURCE_ATTRIBUTION = {
+  publisher: "competition.gov.cy",
+  license: "Cyprus-PSI",
+  base_url: "https://competition.gov.cy",
+} as const;
+
+/**
+ * Build a minimal source-attribution stub for items in a search result list.
+ * Returns the publisher / license / source_url / retrieved_at subset of
+ * CitationMetadata. Used for list-returning tools where building the full
+ * entity-linker citation per item would be expensive.
+ */
+export function buildItemAttribution(sourceUrl?: string | null): {
+  publisher: string;
+  license: string;
+  source_url: string;
+  retrieved_at: string;
+} {
+  return {
+    publisher: SOURCE_ATTRIBUTION.publisher,
+    license: SOURCE_ATTRIBUTION.license,
+    source_url: sourceUrl || SOURCE_ATTRIBUTION.base_url,
+    retrieved_at: new Date().toISOString(),
   };
 }
