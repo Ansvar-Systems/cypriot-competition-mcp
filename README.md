@@ -170,7 +170,15 @@ Apache License 2.0. See [LICENSE](./LICENSE) for details.
 
 ### Data Licenses
 
-Regulatory data sourced from official government publications. See `data/coverage.json` for per-source provenance details.
+**License code:** `Cyprus-PSI` — statutory Cyprus public-sector information re-use regime.
+
+**Statutory basis:** Cyprus Law 143(I)/2021 transposes [EU Directive 2019/1024](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32019L1024) on Open Data and the re-use of public sector information. Article 8 of the directive mandates commercial re-use of public-sector documents.
+
+The Commission for the Protection of Competition (CPC) is a public-sector body of the Republic of Cyprus within scope of Law 143(I)/2021. The CPC [disclaimer page](https://web.archive.org/web/2025/http://www.competition.gov.cy/competition/competition.nsf/disclaimer_en/disclaimer_en?OpenDocument) is silent on reuse; the Republic-of-Cyprus copyright assertion does not displace the statutory PSI regime.
+
+Commercial reuse, derivatives, and redistribution are permitted with attribution. See `sources.yml` for the anchored URL pattern and full provenance metadata; see `data/coverage.json` for corpus scope.
+
+Attribution: "Source: Commission for the Protection of Competition (CPC), Republic of Cyprus. Reproduced under Cyprus public-sector information re-use regime (Law 143(I)/2021, transposing EU Directive 2019/1024)."
 
 ---
 
