@@ -141,6 +141,20 @@ jobs:
                 [ -e "$gz" ] || continue
                 gunzip -f "$gz"
               done
+              # Flip journal_mode to DELETE on every provisioned .db before bake.
+              # Release-asset DBs that ship in WAL mode (byte 18 = 0x02) create
+              # latent read-only-FS bugs on container recreate (`docker compose
+              # up -d --remove-orphans` triggers a fresh container that can't
+              # write the -wal/-shm shadow files). Per memory
+              # feedback_mcp_db_journal_delete_for_read_only_fs_2026_05_14 and
+              # feedback_compose_recreate_surfaces_latent_image_regressions_2026_05_17.
+              # sqlite3 is preinstalled on ubuntu-latest runners; the PRAGMA is
+              # idempotent (no-op if already DELETE).
+              for db in data/*.db; do
+                [ -e "$db" ] || continue
+                mode=$(sqlite3 "$db" 'PRAGMA journal_mode=DELETE;' 2>/dev/null || true)
+                echo "Journal mode for $db: $mode"
+              done
               # Normalize filename so the Dockerfile's COPY succeeds. The Dockerfile
               # may reference data/database.db (legacy default) or a jurisdiction-
               # specific path like data/ftnet.db (db_release_path manifest pattern).

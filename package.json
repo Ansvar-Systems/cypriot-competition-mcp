@@ -2,7 +2,7 @@
   "name": "@ansvar/cypriot-competition-mcp",
   "version": "0.1.0",
   "mcpName": "eu.ansvar/cypriot-competition-mcp",
-  "description": "CPC-CY (Commission for the Protection of Competition \u2014 Cyprus) MCP server \u2014 competition law decisions, merger control, and sector enforcement",
+  "description": "CPC-CY (Commission for the Protection of Competition — Cyprus) MCP server — competition law decisions, merger control, and sector enforcement",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
